@@ -1,5 +1,30 @@
-import { colleges } from "../../data/colleges";
 import Link from "next/link";
+import { notFound } from "next/navigation";
+
+interface College {
+  id: number;
+  name: string;
+  location: string;
+  fees: string;
+  rating: number;
+  placements: string;
+  courses: string[];
+  reviews: string;
+  type: string;
+}
+
+async function getCollege(id: string): Promise<College | null> {
+  try {
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/api/colleges/${id}`,
+      { cache: "no-store" }
+    );
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
+  }
+}
 
 export default async function CollegeDetails({
   params,
@@ -7,21 +32,9 @@ export default async function CollegeDetails({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const college = colleges.find((c) => c.id === Number(id));
+  const college = await getCollege(id);
 
-  if (!college) {
-    return (
-      <main className="max-w-3xl mx-auto px-6 py-16 text-center">
-        <p className="text-4xl mb-4">🏫</p>
-        <h1 className="font-display text-2xl font-bold mb-2" style={{ color: "var(--ink)" }}>
-          College not found
-        </h1>
-        <Link href="/colleges" className="text-sm" style={{ color: "var(--accent)" }}>
-          ← Back to browse
-        </Link>
-      </main>
-    );
-  }
+  if (!college) return notFound();
 
   return (
     <main className="max-w-4xl mx-auto px-6 py-8">

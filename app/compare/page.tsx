@@ -1,14 +1,32 @@
 "use client";
 
-import { useState } from "react";
-import { colleges } from "../data/colleges";
+import { useState, useEffect } from "react";
+
+interface College {
+  id: number;
+  name: string;
+  location: string;
+  fees: string;
+  rating: number;
+  placements: string;
+  courses: string[];
+  type: string;
+}
 
 export default function ComparePage() {
+  const [allColleges, setAllColleges] = useState<College[]>([]);
   const [first, setFirst] = useState("");
   const [second, setSecond] = useState("");
 
-  const c1 = colleges.find((c) => c.id.toString() === first);
-  const c2 = colleges.find((c) => c.id.toString() === second);
+  useEffect(() => {
+    fetch("/api/colleges")
+      .then((r) => r.json())
+      .then(setAllColleges)
+      .catch(console.error);
+  }, []);
+
+  const c1 = allColleges.find((c) => c.id.toString() === first);
+  const c2 = allColleges.find((c) => c.id.toString() === second);
 
   const feesNum = (fees: string) => parseInt(fees.replace(/[^0-9]/g, ""));
 
@@ -18,36 +36,37 @@ export default function ComparePage() {
     return valA > valB ? "a" : "b";
   };
 
-  const rows = c1 && c2
-    ? [
-        { label: "Type", a: c1.type, b: c2.type, wKey: null },
-        { label: "Location", a: c1.location, b: c2.location, wKey: null },
-        {
-          label: "Rating",
-          a: `${c1.rating} ★`,
-          b: `${c2.rating} ★`,
-          wKey: winner(c1.rating, c2.rating),
-        },
-        {
-          label: "Placements",
-          a: c1.placements,
-          b: c2.placements,
-          wKey: winner(parseInt(c1.placements), parseInt(c2.placements)),
-        },
-        {
-          label: "Annual Fees",
-          a: c1.fees,
-          b: c2.fees,
-          wKey: winner(feesNum(c1.fees), feesNum(c2.fees), true),
-        },
-        {
-          label: "Courses",
-          a: c1.courses.join(", "),
-          b: c2.courses.join(", "),
-          wKey: null,
-        },
-      ]
-    : [];
+  const rows =
+    c1 && c2
+      ? [
+          { label: "Type", a: c1.type, b: c2.type, wKey: null },
+          { label: "Location", a: c1.location, b: c2.location, wKey: null },
+          {
+            label: "Rating",
+            a: `${c1.rating} ★`,
+            b: `${c2.rating} ★`,
+            wKey: winner(c1.rating, c2.rating),
+          },
+          {
+            label: "Placements",
+            a: c1.placements,
+            b: c2.placements,
+            wKey: winner(parseInt(c1.placements), parseInt(c2.placements)),
+          },
+          {
+            label: "Annual Fees",
+            a: c1.fees,
+            b: c2.fees,
+            wKey: winner(feesNum(c1.fees), feesNum(c2.fees), true),
+          },
+          {
+            label: "Courses",
+            a: c1.courses.join(", "),
+            b: c2.courses.join(", "),
+            wKey: null,
+          },
+        ]
+      : [];
 
   return (
     <main>
@@ -93,7 +112,7 @@ export default function ComparePage() {
                 }}
               >
                 <option value="">— Select a college —</option>
-                {colleges.map((c) => (
+                {allColleges.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.name}
                   </option>

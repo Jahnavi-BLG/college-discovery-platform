@@ -1,29 +1,44 @@
 "use client";
 
-import { colleges } from "../data/colleges";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+
+interface College {
+  id: number;
+  name: string;
+  location: string;
+  fees: string;
+  rating: number;
+  placements: string;
+  courses: string[];
+  type: string;
+}
 
 export default function CollegesPage() {
+  const [colleges, setColleges] = useState<College[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState("rating");
 
-  const filtered = colleges
-    .filter(
-      (c) =>
-        c.name.toLowerCase().includes(search.toLowerCase()) ||
-        c.location.toLowerCase().includes(search.toLowerCase()) ||
-        c.type.toLowerCase().includes(search.toLowerCase())
-    )
-    .sort((a, b) => {
-      if (sortBy === "rating") return b.rating - a.rating;
-      if (sortBy === "placements") return parseInt(b.placements) - parseInt(a.placements);
-      if (sortBy === "fees-asc")
-        return parseInt(a.fees.replace(/[^0-9]/g, "")) - parseInt(b.fees.replace(/[^0-9]/g, ""));
-      if (sortBy === "fees-desc")
-        return parseInt(b.fees.replace(/[^0-9]/g, "")) - parseInt(a.fees.replace(/[^0-9]/g, ""));
-      return 0;
-    });
+  const fetchColleges = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({ sortBy });
+      if (search) params.set("search", search);
+      const res = await fetch(`/api/colleges?${params}`);
+      const data = await res.json();
+      setColleges(data);
+    } catch (err) {
+      console.error("Failed to load colleges:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [search, sortBy]);
+
+  useEffect(() => {
+    const debounce = setTimeout(fetchColleges, 300);
+    return () => clearTimeout(debounce);
+  }, [fetchColleges]);
 
   return (
     <main>
@@ -34,7 +49,7 @@ export default function CollegesPage() {
             Browse Colleges
           </h1>
           <p className="mt-1 text-sm" style={{ color: "var(--ink3)" }}>
-            Explore {colleges.length} top engineering institutions across India
+            Explore {loading ? "…" : colleges.length} top engineering institutions across India
           </p>
         </div>
       </div>
@@ -73,14 +88,20 @@ export default function CollegesPage() {
         </div>
 
         {/* Grid */}
-        {filtered.length === 0 ? (
+        {loading ? (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="bg-white rounded-2xl h-52 animate-pulse" style={{ border: "1px solid var(--card-border)" }} />
+            ))}
+          </div>
+        ) : colleges.length === 0 ? (
           <div className="text-center py-20" style={{ color: "var(--ink3)" }}>
             <p className="text-4xl mb-3">🏫</p>
             <p className="text-base">No colleges match your search.</p>
           </div>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {filtered.map((college) => (
+            {colleges.map((college) => (
               <Link
                 key={college.id}
                 href={`/colleges/${college.id}`}

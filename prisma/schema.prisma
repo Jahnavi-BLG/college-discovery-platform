@@ -8,10 +8,13 @@ datasource db {
 }
 
 model College {
-  id         Int    @id @default(autoincrement())
-  name       String
+  id         Int      @id @default(autoincrement())
+  name       String   @unique
   location   String
   fees       String
   rating     Float
   placements String
+  courses    String[]
+  reviews    String
+  type       String
 }
